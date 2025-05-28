@@ -195,26 +195,28 @@ const Auth = () => {
 
   const createAdminAccount = async () => {
     try {
-      // Admin credentials
+      // Identifiants admin
       const adminEmail = "admin@nimbaexpress.com";
       const adminPassword = "AdminNimba2024!";
       
-      // Check if admin account already exists
-      const { data: existingUser } = await supabase
+      console.log("Tentative de création du compte admin...");
+      
+      // Vérifier si un admin existe déjà
+      const { data: existingAdmin } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, role')
         .eq('role', 'admin')
         .maybeSingle();
         
-      if (existingUser) {
+      if (existingAdmin) {
         toast({
           title: "Compte administrateur existant",
-          description: `Un administrateur existe déjà. Email: ${adminEmail}`,
+          description: `Un administrateur existe déjà. Utilisez: ${adminEmail}`,
         });
         return;
       }
         
-      // Create admin user using Supabase signup
+      // Créer le compte admin
       const { data: userData, error: userError } = await supabase.auth.signUp({
         email: adminEmail,
         password: adminPassword,
@@ -227,26 +229,35 @@ const Auth = () => {
         }
       });
 
-      if (userError) throw userError;
+      if (userError) {
+        console.error("Erreur création utilisateur:", userError);
+        throw userError;
+      }
+
+      console.log("Utilisateur créé:", userData);
 
       if (userData.user) {
-        // Update the user's role in profiles table
+        // Forcer la mise à jour du rôle dans la table profiles
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ role: 'admin' })
           .eq('id', userData.user.id);
 
         if (profileError) {
-          console.error('Error updating profile:', profileError);
+          console.error('Erreur mise à jour profil:', profileError);
+        } else {
+          console.log("Profil admin mis à jour avec succès");
         }
       }
 
       toast({
         title: "Compte administrateur créé",
-        description: `Email: ${adminEmail}, Mot de passe: ${adminPassword}`,
+        description: `Email: ${adminEmail} | Mot de passe: ${adminPassword}`,
+        duration: 10000,
       });
       
     } catch (error: any) {
+      console.error("Erreur création admin:", error);
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors de la création du compte admin.",
@@ -331,10 +342,13 @@ const Auth = () => {
             variant="outline" 
             size="sm"
             onClick={createAdminAccount}
-            className="text-xs"
+            className="text-xs bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
           >
             Créer un compte administrateur
           </Button>
+          <div className="mt-2 text-xs text-gray-500">
+            Email: admin@nimbaexpress.com | Mot de passe: AdminNimba2024!
+          </div>
         </div>
 
         {/* Tabs */}
