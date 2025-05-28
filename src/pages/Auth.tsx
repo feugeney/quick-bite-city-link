@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -199,100 +200,109 @@ const Auth = () => {
       const adminEmail = "admin@nimbaexpress.com";
       const adminPassword = "AdminNimba2024!";
       
-      console.log("Vérification/création du compte admin...");
+      console.log("Création/vérification du compte admin...");
       
-      // D'abord, vérifier si l'utilisateur existe déjà dans auth.users
-      const { data: existingUserData, error: listError } = await supabase.auth.admin.listUsers();
-      
-      if (listError) {
-        console.error("Erreur lors de la récupération des utilisateurs:", listError);
-        throw listError;
-      }
-      
-      const existingUser = existingUserData.users.find((user: any) => user.email === adminEmail);
-      
-      if (existingUser) {
-        console.log("Utilisateur admin existe déjà, mise à jour du profil...");
+      // Vérifier si le profil admin existe déjà
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('role', 'admin')
+        .maybeSingle();
         
-        // Vérifier/créer le profil admin
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id, role')
-          .eq('id', existingUser.id)
-          .maybeSingle();
-          
-        if (!existingProfile) {
-          // Créer le profil s'il n'existe pas
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: existingUser.id,
-              role: 'admin',
-              first_name: 'Super',
-              last_name: 'Admin'
-            });
-            
-          if (profileError) {
-            console.error('Erreur création profil:', profileError);
-          }
-        } else if (existingProfile.role !== 'admin') {
-          // Mettre à jour le rôle si nécessaire
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ role: 'admin' })
-            .eq('id', existingUser.id);
-            
-          if (updateError) {
-            console.error('Erreur mise à jour rôle:', updateError);
-          }
-        }
-        
+      if (existingProfile) {
+        console.log("Compte admin existe déjà");
         toast({
-          title: "Compte administrateur prêt",
+          title: "Compte administrateur existant",
           description: `Utilisez: ${adminEmail} | ${adminPassword}`,
           duration: 8000,
         });
         return;
       }
       
-      // Si l'utilisateur n'existe pas, le créer
-      console.log("Création d'un nouvel utilisateur admin...");
+      console.log("Création d'un nouveau compte admin...");
       
-      // Utiliser admin.createUser pour éviter les problèmes d'email
-      const { data: newUserData, error: createError } = await supabase.auth.admin.createUser({
+      // Créer le compte admin avec signUp standard
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: adminEmail,
         password: adminPassword,
-        email_confirm: true,
-        user_metadata: {
-          first_name: 'Super',
-          last_name: 'Admin',
-          role: 'admin'
+        options: {
+          data: {
+            first_name: 'Super',
+            last_name: 'Admin',
+            role: 'admin'
+          }
         }
       });
 
-      if (createError) {
-        console.error("Erreur création utilisateur admin:", createError);
-        throw createError;
+      if (signUpError) {
+        console.error("Erreur création compte admin:", signUpError);
+        
+        // Si l'utilisateur existe déjà, essayer de mettre à jour le profil
+        if (signUpError.message.includes('already registered')) {
+          console.log("Utilisateur existe, tentative de connexion...");
+          
+          // Essayer de se connecter pour récupérer l'ID utilisateur
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: adminEmail,
+            password: adminPassword,
+          });
+          
+          if (signInError) {
+            console.error("Erreur connexion admin:", signInError);
+            throw new Error("Le compte admin existe mais les identifiants sont incorrects. Utilisez le compte existant.");
+          }
+          
+          if (signInData.user) {
+            // Mettre à jour le profil pour s'assurer qu'il a le rôle admin
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: signInData.user.id,
+                role: 'admin',
+                first_name: 'Super',
+                last_name: 'Admin'
+              });
+              
+            if (updateError) {
+              console.error('Erreur mise à jour profil:', updateError);
+            }
+            
+            // Se déconnecter après la vérification
+            await supabase.auth.signOut();
+          }
+          
+          toast({
+            title: "Compte administrateur vérifié",
+            description: `Utilisez: ${adminEmail} | ${adminPassword}`,
+            duration: 8000,
+          });
+          return;
+        }
+        
+        throw signUpError;
       }
 
-      console.log("Utilisateur admin créé avec succès:", newUserData);
+      console.log("Compte admin créé avec succès:", signUpData);
 
-      if (newUserData.user) {
+      if (signUpData.user) {
         // S'assurer que le profil est créé avec le bon rôle
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
-            id: newUserData.user.id,
+            id: signUpData.user.id,
             role: 'admin',
             first_name: 'Super',
             last_name: 'Admin'
           });
 
         if (profileError) {
-          console.error('Erreur création/mise à jour profil:', profileError);
+          console.error('Erreur création profil admin:', profileError);
         } else {
           console.log("Profil admin créé avec succès");
         }
+        
+        // Se déconnecter après la création
+        await supabase.auth.signOut();
       }
 
       toast({
@@ -854,3 +864,4 @@ const Auth = () => {
 };
 
 export default Auth;
+
