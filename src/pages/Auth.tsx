@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -201,8 +202,14 @@ const Auth = () => {
       console.log("Vérification/création du compte admin...");
       
       // D'abord, vérifier si l'utilisateur existe déjà dans auth.users
-      const { data: existingUserData } = await supabase.auth.admin.listUsers();
-      const existingUser = existingUserData.users?.find(user => user.email === adminEmail);
+      const { data: existingUserData, error: listError } = await supabase.auth.admin.listUsers();
+      
+      if (listError) {
+        console.error("Erreur lors de la récupération des utilisateurs:", listError);
+        throw listError;
+      }
+      
+      const existingUser = existingUserData.users.find((user: any) => user.email === adminEmail);
       
       if (existingUser) {
         console.log("Utilisateur admin existe déjà, mise à jour du profil...");
