@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -195,58 +196,96 @@ const Auth = () => {
 
   const createAdminAccount = async () => {
     try {
-      // Identifiants admin
       const adminEmail = "admin@nimbaexpress.com";
       const adminPassword = "AdminNimba2024!";
       
-      console.log("Tentative de création du compte admin...");
+      console.log("Vérification/création du compte admin...");
       
-      // Vérifier si un admin existe déjà
-      const { data: existingAdmin } = await supabase
-        .from('profiles')
-        .select('id, role')
-        .eq('role', 'admin')
-        .maybeSingle();
+      // D'abord, vérifier si l'utilisateur existe déjà dans auth.users
+      const { data: existingUserData } = await supabase.auth.admin.listUsers();
+      const existingUser = existingUserData.users?.find(user => user.email === adminEmail);
+      
+      if (existingUser) {
+        console.log("Utilisateur admin existe déjà, mise à jour du profil...");
         
-      if (existingAdmin) {
+        // Vérifier/créer le profil admin
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id, role')
+          .eq('id', existingUser.id)
+          .maybeSingle();
+          
+        if (!existingProfile) {
+          // Créer le profil s'il n'existe pas
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: existingUser.id,
+              role: 'admin',
+              first_name: 'Super',
+              last_name: 'Admin'
+            });
+            
+          if (profileError) {
+            console.error('Erreur création profil:', profileError);
+          }
+        } else if (existingProfile.role !== 'admin') {
+          // Mettre à jour le rôle si nécessaire
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ role: 'admin' })
+            .eq('id', existingUser.id);
+            
+          if (updateError) {
+            console.error('Erreur mise à jour rôle:', updateError);
+          }
+        }
+        
         toast({
-          title: "Compte administrateur existant",
-          description: `Un administrateur existe déjà. Utilisez: ${adminEmail}`,
+          title: "Compte administrateur prêt",
+          description: `Utilisez: ${adminEmail} | ${adminPassword}`,
+          duration: 8000,
         });
         return;
       }
-        
-      // Créer le compte admin
-      const { data: userData, error: userError } = await supabase.auth.signUp({
+      
+      // Si l'utilisateur n'existe pas, le créer
+      console.log("Création d'un nouvel utilisateur admin...");
+      
+      // Utiliser admin.createUser pour éviter les problèmes d'email
+      const { data: newUserData, error: createError } = await supabase.auth.admin.createUser({
         email: adminEmail,
         password: adminPassword,
-        options: {
-          data: {
-            first_name: "Super",
-            last_name: "Admin",
-            role: "admin"
-          }
+        email_confirm: true,
+        user_metadata: {
+          first_name: 'Super',
+          last_name: 'Admin',
+          role: 'admin'
         }
       });
 
-      if (userError) {
-        console.error("Erreur création utilisateur:", userError);
-        throw userError;
+      if (createError) {
+        console.error("Erreur création utilisateur admin:", createError);
+        throw createError;
       }
 
-      console.log("Utilisateur créé:", userData);
+      console.log("Utilisateur admin créé avec succès:", newUserData);
 
-      if (userData.user) {
-        // Forcer la mise à jour du rôle dans la table profiles
+      if (newUserData.user) {
+        // S'assurer que le profil est créé avec le bon rôle
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', userData.user.id);
+          .upsert({
+            id: newUserData.user.id,
+            role: 'admin',
+            first_name: 'Super',
+            last_name: 'Admin'
+          });
 
         if (profileError) {
-          console.error('Erreur mise à jour profil:', profileError);
+          console.error('Erreur création/mise à jour profil:', profileError);
         } else {
-          console.log("Profil admin mis à jour avec succès");
+          console.log("Profil admin créé avec succès");
         }
       }
 
@@ -344,7 +383,7 @@ const Auth = () => {
             onClick={createAdminAccount}
             className="text-xs bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
           >
-            Créer un compte administrateur
+            Créer/Vérifier compte administrateur
           </Button>
           <div className="mt-2 text-xs text-gray-500">
             Email: admin@nimbaexpress.com | Mot de passe: AdminNimba2024!
