@@ -129,10 +129,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log("Rôle utilisateur:", profileData?.role, "Est admin:", isAdmin);
       
-      toast({
-        title: "Connexion réussie",
-        description: isAdmin ? "Bienvenue administrateur!" : "Bienvenue sur NimbaExpress!",
-      });
+      // Pas de toast de confirmation - connexion directe
       
       return { isAdmin };
     } catch (error: any) {

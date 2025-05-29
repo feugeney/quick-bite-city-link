@@ -9,7 +9,7 @@ import Footer from './Footer';
 
 const PublicHomepage = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-guinea-subtle guinea-pattern">
       <ModernHeroSection />
       <QuickActions />
       <CategoryGrid />

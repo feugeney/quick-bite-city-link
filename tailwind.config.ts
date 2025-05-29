@@ -26,32 +26,46 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: '#10B981', // Vert Glovo
+					DEFAULT: '#C41E3A', // Rouge guinéen moderne
+					foreground: '#FFFFFF',
+					50: '#FEF2F2',
+					100: '#FEE2E2',
+					200: '#FECACA',
+					300: '#FCA5A5',
+					400: '#F87171',
+					500: '#C41E3A',
+					600: '#B91C1C',
+					700: '#991B1B',
+					800: '#7F1D1D',
+					900: '#651419'
+				},
+				secondary: {
+					DEFAULT: '#FFD700', // Or guinéen
+					foreground: '#1F2937',
+					50: '#FFFBEB',
+					100: '#FEF3C7',
+					200: '#FDE68A',
+					300: '#FCD34D',
+					400: '#FBBF24',
+					500: '#FFD700',
+					600: '#D97706',
+					700: '#B45309',
+					800: '#92400E',
+					900: '#78350F'
+				},
+				accent: {
+					DEFAULT: '#059669', // Vert forêt guinéenne
 					foreground: '#FFFFFF',
 					50: '#ECFDF5',
 					100: '#D1FAE5',
 					200: '#A7F3D0',
 					300: '#6EE7B7',
 					400: '#34D399',
-					500: '#10B981',
-					600: '#059669',
-					700: '#047857',
-					800: '#065F46',
-					900: '#064E3B'
-				},
-				secondary: {
-					DEFAULT: '#F97316', // Orange Glovo
-					foreground: '#FFFFFF',
-					50: '#FFF7ED',
-					100: '#FFEDD5',
-					200: '#FED7AA',
-					300: '#FDBA74',
-					400: '#FB923C',
-					500: '#F97316',
-					600: '#EA580C',
-					700: '#C2410C',
-					800: '#9A3412',
-					900: '#7C2D12'
+					500: '#059669',
+					600: '#047857',
+					700: '#065F46',
+					800: '#064E3B',
+					900: '#022C22'
 				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
@@ -60,10 +74,6 @@ export default {
 				muted: {
 					DEFAULT: 'hsl(var(--muted))',
 					foreground: 'hsl(var(--muted-foreground))'
-				},
-				accent: {
-					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
@@ -141,6 +151,14 @@ export default {
 						transform: 'translateY(-5px)',
 						animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)'
 					}
+				},
+				'guinea-wave': {
+					'0%, 100%': {
+						transform: 'scaleX(1)'
+					},
+					'50%': {
+						transform: 'scaleX(1.05)'
+					}
 				}
 			},
 			animation: {
@@ -149,7 +167,16 @@ export default {
 				'fade-in': 'fade-in 0.6s ease-out',
 				'slide-in': 'slide-in 0.4s ease-out',
 				'pulse-custom': 'pulse-custom 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-				'bounce-gentle': 'bounce-gentle 1s infinite'
+				'bounce-gentle': 'bounce-gentle 1s infinite',
+				'guinea-wave': 'guinea-wave 3s ease-in-out infinite'
+			},
+			backgroundImage: {
+				'guinea-pattern': 'linear-gradient(45deg, #C41E3A 25%, transparent 25%), linear-gradient(-45deg, #C41E3A 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #FFD700 75%), linear-gradient(-45deg, transparent 75%, #FFD700 75%)',
+				'guinea-gradient': 'linear-gradient(135deg, #C41E3A 0%, #FFD700 50%, #059669 100%)',
+				'guinea-subtle': 'linear-gradient(120deg, #FEF2F2 0%, #FFFBEB 50%, #ECFDF5 100%)'
+			},
+			fontFamily: {
+				'guinea': ['Inter', 'system-ui', 'sans-serif'],
 			}
 		}
 	},

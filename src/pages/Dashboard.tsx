@@ -39,12 +39,18 @@ const Dashboard = () => {
 
   if (loading || roleLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-guinea-subtle guinea-pattern flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-white font-bold text-2xl">N</span>
+          <div className="w-20 h-20 bg-gradient-to-br from-primary-500 via-secondary-500 to-accent-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl animate-pulse">
+            <span className="text-white font-bold text-3xl">N</span>
           </div>
-          <p className="text-gray-600">Chargement de votre tableau de bord...</p>
+          <div className="text-2xl font-bold text-gradient-guinea mb-2">NimbaExpress</div>
+          <p className="text-gray-600 text-lg">Chargement de votre tableau de bord...</p>
+          <div className="mt-4 flex justify-center space-x-2">
+            <div className="w-3 h-3 bg-primary-500 rounded-full animate-bounce"></div>
+            <div className="w-3 h-3 bg-secondary-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+            <div className="w-3 h-3 bg-accent-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+          </div>
         </div>
       </div>
     );
@@ -68,7 +74,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-guinea-subtle guinea-pattern">
       {renderDashboard()}
     </div>
   );
