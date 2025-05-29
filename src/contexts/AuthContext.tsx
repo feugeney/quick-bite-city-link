@@ -73,34 +73,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Tentative de connexion pour:", email);
+      
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur d'authentification:", error);
+        throw error;
+      }
+
+      if (!authData.user) {
+        throw new Error("Aucun utilisateur trouvé");
+      }
+
+      console.log("Connexion réussie, vérification du profil...");
       
-      // Check if the user is an admin
+      // Attendre un moment pour que la session soit bien établie
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Vérifier le rôle de l'utilisateur
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('id', authData.user.id)
         .single();
         
-      if (profileError) throw profileError;
+      console.log("Données du profil:", profileData, "Erreur:", profileError);
       
-      const isAdmin = profileData?.role === 'admin';
+      let isAdmin = false;
+      
+      if (profileError) {
+        console.log("Erreur lors de la récupération du profil, création en cours...");
+        // Si le profil n'existe pas, le créer
+        const role = authData.user.user_metadata?.role || 'client';
+        const { error: createError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: authData.user.id,
+            role: role,
+            first_name: authData.user.user_metadata?.first_name,
+            last_name: authData.user.user_metadata?.last_name
+          });
+          
+        if (createError) {
+          console.error("Erreur création profil:", createError);
+        }
+        
+        isAdmin = role === 'admin';
+      } else {
+        isAdmin = profileData?.role === 'admin';
+      }
+      
+      console.log("Rôle utilisateur:", profileData?.role, "Est admin:", isAdmin);
       
       toast({
         title: "Connexion réussie",
-        description: "Bienvenue sur NimbaExpress!",
+        description: isAdmin ? "Bienvenue administrateur!" : "Bienvenue sur NimbaExpress!",
       });
       
       return { isAdmin };
     } catch (error: any) {
+      console.error("Erreur complète de connexion:", error);
+      
+      let errorMessage = "Email ou mot de passe incorrect.";
+      
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Identifiants incorrects. Vérifiez votre email et mot de passe.";
+      } else if (error.message.includes("Email not confirmed")) {
+        errorMessage = "Veuillez confirmer votre email avant de vous connecter.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erreur de connexion",
-        description: error.message || "Email ou mot de passe incorrect.",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
