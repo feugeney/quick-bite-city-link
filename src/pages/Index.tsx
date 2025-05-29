@@ -8,12 +8,12 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center">
+      <div className="min-h-screen bg-guinea-subtle guinea-pattern flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-white font-bold text-2xl">N</span>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-pulse">
+            <span className="text-white font-bold text-lg sm:text-2xl">N</span>
           </div>
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600 text-sm sm:text-base">Chargement...</p>
         </div>
       </div>
     );

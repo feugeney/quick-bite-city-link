@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ type AuthContextType = {
   signUp: (email: string, password: string, firstName: string, lastName: string, role?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<{isAdmin: boolean}>;
   signOut: () => Promise<void>;
+  createAdminAccount: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +40,91 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const createAdminAccount = async () => {
+    try {
+      const adminEmail = "admin@nimbaexpress.com";
+      const adminPassword = "AdminNimba2024!";
+      
+      console.log("Création du compte administrateur...");
+      
+      // Essayer de créer le compte admin
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: adminEmail,
+        password: adminPassword,
+        options: {
+          data: {
+            first_name: 'Super',
+            last_name: 'Admin',
+            role: 'admin'
+          }
+        }
+      });
+
+      if (signUpError && !signUpError.message.includes('User already registered')) {
+        throw signUpError;
+      }
+
+      // Si l'utilisateur existe déjà, essayer de se connecter pour vérifier
+      if (signUpError?.message.includes('User already registered')) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: adminEmail,
+          password: adminPassword,
+        });
+
+        if (signInData.user && !signInError) {
+          // Vérifier/mettre à jour le profil
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: signInData.user.id,
+              role: 'admin',
+              first_name: 'Super',
+              last_name: 'Admin'
+            });
+
+          if (profileError) {
+            console.error('Erreur mise à jour profil:', profileError);
+          }
+
+          // Se déconnecter après vérification
+          await supabase.auth.signOut();
+        }
+      } else if (signUpData.user) {
+        // Nouveau compte créé, créer le profil
+        setTimeout(async () => {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: signUpData.user!.id,
+              role: 'admin',
+              first_name: 'Super',
+              last_name: 'Admin'
+            });
+
+          if (profileError) {
+            console.error('Erreur création profil admin:', profileError);
+          }
+        }, 1000);
+        
+        // Se déconnecter après création
+        await supabase.auth.signOut();
+      }
+
+      toast({
+        title: "Compte administrateur prêt",
+        description: "Vous pouvez maintenant vous connecter avec les identifiants admin.",
+      });
+      
+    } catch (error: any) {
+      console.error("Erreur création admin:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création du compte admin.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, role: string = 'client') => {
     try {
@@ -129,8 +214,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log("Rôle utilisateur:", profileData?.role, "Est admin:", isAdmin);
       
-      // Pas de toast de confirmation - connexion directe
-      
       return { isAdmin };
     } catch (error: any) {
       console.error("Erreur complète de connexion:", error);
@@ -179,6 +262,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signUp,
     signIn,
     signOut,
+    createAdminAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
