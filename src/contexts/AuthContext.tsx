@@ -38,8 +38,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     });
 
+    // Créer automatiquement le compte admin au démarrage
+    createAdminAccountOnStartup();
+
     return () => subscription.unsubscribe();
   }, []);
+
+  const createAdminAccountOnStartup = async () => {
+    try {
+      const adminEmail = "admin@nimbaexpress.com";
+      const adminPassword = "AdminNimba2024!";
+      
+      // Essayer de créer le compte admin
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: adminEmail,
+        password: adminPassword,
+        options: {
+          data: {
+            first_name: 'Super',
+            last_name: 'Admin',
+            role: 'admin'
+          }
+        }
+      });
+
+      if (signUpError && !signUpError.message.includes('User already registered')) {
+        console.error('Erreur création admin:', signUpError);
+        return;
+      }
+
+      // Si l'utilisateur existe déjà, vérifier le profil
+      if (signUpError?.message.includes('User already registered')) {
+        console.log('Compte admin existe déjà');
+      } else if (signUpData.user) {
+        // Nouveau compte créé, créer le profil
+        setTimeout(async () => {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: signUpData.user!.id,
+              role: 'admin',
+              first_name: 'Super',
+              last_name: 'Admin'
+            });
+
+          if (profileError) {
+            console.error('Erreur création profil admin:', profileError);
+          }
+        }, 1000);
+      }
+      
+    } catch (error: any) {
+      console.error("Erreur création admin automatique:", error);
+    }
+  };
 
   const createAdminAccount = async () => {
     try {
@@ -112,8 +164,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       toast({
-        title: "Compte administrateur prêt",
-        description: "Vous pouvez maintenant vous connecter avec les identifiants admin.",
+        title: "Compte administrateur créé",
+        description: "Email: admin@nimbaexpress.com | Mot de passe: AdminNimba2024!",
       });
       
     } catch (error: any) {
